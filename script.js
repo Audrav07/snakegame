@@ -1,237 +1,243 @@
-const Game_speed = 100;
-const Canvas_border_color = "black";
-const Canvas_background_color = "white";
-const Snake_color ='lightgreen';
-const Snake_border_color ='darkgreen';
-const Food_color = 'red';
-const Food_border_color ='darkred';
 
+var gameBoardSize = 40;
+var gamePoints = 0;
+var gameSpeed = 100;
 
-let snake = [
-    { x: 150, y: 150},
-    { x: 140, y: 150},
-    { x: 130, y: 150},
-    { x: 120, y: 150},
-    { x: 110, y: 150},
-]
-
-
-//User score
-
-let scre = 0;
-//when set to true the snake is changing direction
-let changingDirection = false;
-//food x-coord
-let foodX;
-//food y-coord
-let foodY;
-//horizontal velocity
-let dx = 10;
-//verical veolicty
-let dy = 0;
-
-//get the canvas element
-const gameCanvas = document.getElementById("gameCanvas");
-//Return a two dimensional drawing context
-const ctx = gameCanvas.getContext("2d");
-
-//start game
-
-MediaDeviceInfo();
-//create the first food location 
-createFood();
-//Call changeDirection hwenever a key is pressed
-document.addEventListener("keydown", changingDirection);
-
-/**
- * main function of game
- * called repeatedly to advance the game
- */
-
- funciton MediaDeviceInfo() {
-     //if the game ended return early to stop game
-     if (didGameEnd()) 
-     return;
-
-     setTimeout(function onTrick() {
-         changingDirection = false;
-         clearCanvas();
-         drawFood();
-         advanceSnake();
-         drawSnake();
-
-         //call game again
-         MediaDeviceInfo();
-     }, Game_speed)
-
- }
-
- /**
-  * change the background color of the canvas to Canvas_background_color and draw a border around it
-  */
-
-  function clearCanvas() {
-      //select the color to fill the drawing
-       ctx.fillStyle = Canvas_background_color;
-       //select the color for the border fo the canvas
-       ctx.strokestyle = Canvas_border_color;
-
-       //draw a filled rectangle to cover the entire canvas
-       ctx.fillRect(0,0, gameCanvas.clientWidth, gameCanvas.height);
-       //draw a border around canvas
-       ctx.strokeRect(0,0, gameCanvas.clientWidth, gameCanvas.height);
-  }
-
-/**
- * draw foodd
- */
-
- function drawFood() {
-     ctx.fillStyle = Food_color;
-     ctx.strokeStyle = Food_border_color;
-     ctx.fillRect(foodX, foodY, 10, 10);
-     ctx.strokeRect(foodX, foodY, 10, 10);
- }
-
- /**
-  * adnvace snake by changing the x-coords of its parts
-  * according o the horizontal veolcity and the y-coords
-  */
-
-  function advanceSnake() {
-      //create the new snake head
-      const head = {x: snake[0].x + dx, y: snake[0].y + dy};
-      //add the new head to the beginning of body
-      snake.unshift(head);
-
-      const didEatFood = snake[0].x === foodX && snake[0].y === foodY;
-      if(didEatFood) {
-          //increase score
-          score += 10;
-          //display score
-          document.getElementById('score').innerHTML = score;
-
-          //generate new food location
-          createFood();
-
-      } else{
-          //remove the last part of snake body
-          snake.pop();
-      }
-  }
-
- /**
-  * returns true if the head of the snake touched another part of the game
-  * or walls */
- 
-  
-  function didGameEnd() {
-      for (let i = 4; i <snake.length; i++) {
-          if (snake[i].x === snake[0].x && snake[i].y === snake[0].y) 
-          return true
-      }
-
-      const hitLeftWall = snake[0].x < 0;
-      const hitRightWall = snake[0].x > gameCanvas.width - 10;
-      consthitTopWall = snake[0].y < 0;
-      const hitBottomWall = snake[0].y > gameCanvas.height - 10;
-
-      return hitLeftWall || hitRightWall || hitop
-       || hitBottomWall
-  }
-
-  /** genreate a random number that is multiple of 10 given a minum and maximum number
-   * @param { number } min - the minimum number the random number can be
-   * @param { number } max - the maximum number the random number can be
-  */
-
-function randomTen(min, max) {
-    return AMath.round((Math.random() * (max-min) + min) / 10) * 10;
-}
-
-
-/** creates random set of coords for snake food */
-
-
-function createFood() {
-    //generate random number the food x-coordinate
-    foodX = randomTen(0, gameCanvas.height - 10);
-    //generate random number the food y-coordinate
-    foodY = randomTen(0, gameCanvas.height - 10);
-
-
-    //if new food laocation is where the snake is, generate ne foodlocation
-snake.forEach(function isFoodOnSnake(part) {
-    const foodIsonSnake = part.x == foodX && part.y == foodY;
-    if (foodIsonSnake) createFood();
+$(document).ready(function() {
+  console.log("Ready Player One!");
+  createBoard();
+  $(".btn").click(function() {
+    startGame();
+  });
 });
 
+var Snake = {
+  position: [
+    [20, 20],
+    [20, 19],
+    [20, 18]
+  ], // snake start position
+  size: 3,
+  direction: "r",
+  alive: true
+};
+
+var Food = {
+  position: [],
+  present: false
+};
+
+function createBoard() {
+  $("#gameBoard").empty();
+  var size = gameBoardSize;
+
+  for (i = 0; i < size; i++) {
+    $("#gameBoard").append('<div class="row"></div>');
+    for (j = 0; j < size; j++) {
+      $(".row:last-child").append('<div class="pixel"></div>');
+    }
+  }
 }
 
+function moveSnake() {
+  var head = Snake.position[0].slice();
 
-/** draws the snake on canas */
+  switch (Snake.direction) {
+    case "r":
+      head[1] += 1;
+      break;
+    case "l":
+      head[1] -= 1;
+      break;
+    case "u":
+      head[0] -= 1;
+      break;
+    case "d":
+      head[0] += 1;
+      break;
+  }
 
-function drawSnake() {
-    //loop through the snake parts drawing each part on canvas
+  // check after head is moved
+  if (alive(head)) {
+    // draw head
+    $(
+      ".row:nth-child(" + head[0] + ") > .pixel:nth-child(" + head[1] + ")"
+    ).addClass("snakePixel");
 
-    snake.forEach(drawSnakePart)
+    // draw rest of body loop
+    for (var i = 0; i < Snake.size; i++) {
+      $(
+        ".row:nth-child(" +
+          Snake.position[i][0] +
+          ") > .pixel:nth-child(" +
+          Snake.position[i][1] +
+          ")"
+      ).addClass("snakePixel");
+    }
+
+    // if head touches food
+    if (
+      head.every(function(e, i) {
+        return e === Food.position[i];
+      })
+    ) {
+      Snake.size++;
+      Food.present = false;
+      gamePoints += 5;
+      $(
+        ".row:nth-child(" +
+          Food.position[0] +
+          ") > .pixel:nth-child(" +
+          Food.position[1] +
+          ")"
+      ).removeClass("foodPixel");
+      $("#score").html("Score: " + gamePoints);
+      if (gamePoints % 16 == 0 && gameSpeed > 10) {
+        gameSpeed -= 5;
+      }
+    } else {
+      $(
+        ".row:nth-child(" +
+          Snake.position[Snake.size - 1][0] +
+          ") > .pixel:nth-child(" +
+          Snake.position[Snake.size - 1][1] +
+          ")"
+      ).removeClass("snakePixel");
+      Snake.position.pop();
+    }
+    Snake.position.unshift(head);
+  } else {
+    gameOver();
+  }
 }
 
-/**
- * draw a part of the snake on the canvas
- * @param { object } snakePart - the coordinates where the part should be drawn
- */
-function drawSnakePart(snakePart) {
-    //set the color of the snake part
-    ctx.fillStyle = Snake_color;
-    //set the border color of the snake part
-    ctx.strokestyle = Snake_border_color;
-
-    //draw a filled rectangle to rep teh snake part of the coords
-     ctx.fillRect(snakePart.x, snakePart.y, 10, 10);
-
-     //draw a border around the snake part
-     ctx.strokeRect(snakePart.x, snakePart.y, 10, 10);
+function generateFood() {
+  if (Food.present === false) {
+    Food.position = [
+      Math.floor(Math.random() * 40 + 1),
+      Math.floor(Math.random() * 40 + 1)
+    ];
+    Food.present = true;
+    console.log("Food at: " + Food.position);
+    $(
+      ".row:nth-child(" +
+        Food.position[0] +
+        ") > .pixel:nth-child(" +
+        Food.position[1] +
+        ")"
+    ).addClass("foodPixel");
+  }
 }
 
-/** changes the vertical and horizontal velocity of the snake according to the key pressed */
-
-function changeDirection(event) {
-    const Left_key = 37;
-    const Right_key = 39;
-    const Up_key = 38;
-    const Down_key = 40;
-
-    /**
-     * prevent snake from reversing
-     */
-    if (changingDirection) return;
-    changingDirection = true;
-
-    const keyPressed = event.keyCode;
-
-    const goingUp = dy === -10;
-    const goingDown = dy === 10;
-    const goingRight = dx === 10;
-    const goingLeft = dx === -10;
-
-    if (keyPressed === Left_key && !goingRight) {
-        dx = -10;
-        dy = 0;
+function keyPress() {
+  $(document).one("keydown", function(key) {
+    switch (key.which) {
+      case 37: // left arrow
+        if (Snake.direction != "r") {
+          Snake.direction = "l";
+        }
+        break;
+      case 38: // up arrow
+        if (Snake.direction != "d") {
+          Snake.direction = "u";
+        }
+        break;
+      case 39: // right arrow
+        if (Snake.direction != "l") {
+          Snake.direction = "r";
+        }
+        break;
+      case 40: // down arrow
+        if (Snake.direction != "u") {
+          Snake.direction = "d";
+        }
+        break;
     }
+  });
+}
 
-    if (keyPressed === Up_key && !goingDown) {
-        dx = 0;
-        dy = 0;
+function gameLoop() {
+  setTimeout(function() {
+    keyPress();
+    generateFood();
+    moveSnake();
+    if (Snake.alive) {
+      gameLoop();
     }
+  }, gameSpeed);
+}
 
-    if (keyPressed === Right_key && !goingLeft) {
-        dx = 10;
-        dy = 0;
+function alive(head) {
+  // head check
+  if (head[0] < 1 || head[0] > 40 || head[1] < 1 || head[1] > 40) {
+    return false;
+  }
+  // wall collision
+  if (
+    Snake.position[0][0] < 1 ||
+    Snake.position[0][0] > 40 ||
+    Snake.position[0][1] < 1 ||
+    Snake.position[0][1] > 40
+  ) {
+    return false;
+  }
+  // self collision
+  for (var i = 1; i < Snake.size; i++) {
+    if (
+      Snake.position[0].every(function(element, index) {
+        return element === Snake.position[i][index];
+      })
+    ) {
+      return false;
     }
+  }
+  return true;
+}
 
-    if (keyPressed === Down_key && !goingUp) {
-        dx = 0;
-        dy = 10;
-    }
+function gameOver() {
+  Snake.alive = false;
+  console.log("Game Over!");
+  $(".overlay").show();
+  $("#gameOver").show();
+  var blink = function() {
+    $(
+      ".row:nth-child(" +
+        Snake.position[0][0] +
+        ") > .pixel:nth-child(" +
+        Snake.position[0][1] +
+        ")"
+    ).toggleClass("snakePixel");
+  };
+
+  var i = 0;
+  function blinkLoop() {
+    blink();
+    setTimeout(function() {
+      i++;
+      if (i < 10) {
+        blinkLoop();
+      }
+    }, 400);
+  }
+  blinkLoop();
+}
+
+function startGame() {
+  // reset game settings
+  Snake.size = 3;
+  Snake.position = [
+    [20, 20],
+    [20, 19],
+    [20, 18]
+  ];
+  Snake.direction = "r";
+  Snake.alive = true;
+  gameSpeed = 100;
+  gamePoints = 0;
+  Food.present = false;
+
+  // start game
+  createBoard();
+  $(".overlay").hide();
+  gameLoop();
 }
